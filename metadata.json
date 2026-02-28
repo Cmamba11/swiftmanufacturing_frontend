@@ -1,0 +1,5 @@
+{
+  "name": "Swift Manufacturing Inventory System",
+  "description": "A comprehensive finished goods inventory system for tracking Rollers (KG) and Packing Bags (Units), featuring production receiving, dispatch management, and customer-specific inventory tracking.",
+  "requestFramePermissions": []
+}
