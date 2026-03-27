@@ -14,11 +14,6 @@ interface WarehouseSystemProps {
   onAddSparePart: (part: SparePart) => void;
   onUpdateSparePart: (part: SparePart) => void;
   onAddSpareIssuance: (iss: SparePartIssuance) => void;
-  canRecordIssuing: boolean;
-  canRecordProduction: boolean;
-  canManageMaterials: boolean;
-  canManageSpareParts: boolean;
-  canRecordSpareIssuance: boolean;
 }
 
 const WarehouseSystem: React.FC<WarehouseSystemProps> = ({ 
@@ -32,12 +27,7 @@ const WarehouseSystem: React.FC<WarehouseSystemProps> = ({
   onUpdateMaterialStock,
   onAddSparePart,
   onUpdateSparePart,
-  onAddSpareIssuance,
-  canRecordIssuing,
-  canRecordProduction,
-  canManageMaterials,
-  canManageSpareParts,
-  canRecordSpareIssuance,
+  onAddSpareIssuance
 }) => {
   const [activeSubTab, setActiveSubTab] = useState<'issuing' | 'production' | 'comparison' | 'materials' | 'spare-parts' | 'spare-issuing'>('production');
   
@@ -60,9 +50,11 @@ const WarehouseSystem: React.FC<WarehouseSystemProps> = ({
   const [productionForm, setProductionForm] = useState({
     date: new Date().toISOString().split('T')[0],
     shift: Shift.DAY,
-    machineType: MachineType.EXTRUSION_BAGS,
+    machineType: MachineType.EXTRUSION_ROLLERS,
     actualOutputKg: 0,
-    actualCount: 0
+    actualCount: 0,
+    rollsUsed: 0,
+    kgUsed: 0
   });
 
   const [stockAddForm, setStockAddForm] = useState({
@@ -118,7 +110,6 @@ const WarehouseSystem: React.FC<WarehouseSystemProps> = ({
 
   const handleIssuingSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!canRecordIssuing) return;
     
     if (usesMaterials) {
       if (totalInputWeight <= 0) return alert("Total input must be greater than zero.");
@@ -157,7 +148,6 @@ const WarehouseSystem: React.FC<WarehouseSystemProps> = ({
 
   const handleProductionSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!canRecordProduction) return;
     const record: ProductionRecord = {
       ...productionForm,
       id: `prod-rec-${Date.now()}`,
@@ -165,12 +155,11 @@ const WarehouseSystem: React.FC<WarehouseSystemProps> = ({
     };
     onAddProduction(record);
     alert(`Production recorded for ${productionForm.machineType}.`);
-    setProductionForm({ ...productionForm, actualOutputKg: 0, actualCount: 0 });
+    setProductionForm({ ...productionForm, actualOutputKg: 0, actualCount: 0, rollsUsed: 0, kgUsed: 0 });
   };
 
   const handleStockAddSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!canManageMaterials) return;
     if (stockAddForm.bags <= 0) return alert("Quantity must be greater than zero.");
     onUpdateMaterialStock(stockAddForm.grade, stockAddForm.bags);
     const unit = stockAddForm.grade === 'IPA' || stockAddForm.grade === 'TULANE' ? 'drums' : 'bags';
@@ -180,7 +169,6 @@ const WarehouseSystem: React.FC<WarehouseSystemProps> = ({
 
   const handleSparePartSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!canManageSpareParts) return;
     if (!sparePartForm.name) return alert("Part name is required.");
     const newPart: SparePart = {
       ...sparePartForm,
@@ -193,7 +181,6 @@ const WarehouseSystem: React.FC<WarehouseSystemProps> = ({
 
   const handleSpareIssuanceSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!canRecordSpareIssuance) return;
     if (!spareIssuanceForm.partId) return alert("Please select a part.");
     if (spareIssuanceForm.quantity <= 0) return alert("Quantity must be greater than zero.");
     
@@ -312,8 +299,8 @@ const WarehouseSystem: React.FC<WarehouseSystemProps> = ({
                     </div>
                     <div className="text-right">
                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Current Reserve</p>
-                       <p className="text-4xl font-black text-[#003366]">{materialStock[grade]} <span className="text-sm">{grade === 'IPA' || grade === 'TULANE' ? 'Drums' : 'Bags'}</span></p>
-                       <p className="text-lg font-black text-[#4DB848]">{grade === 'IPA' || grade === 'TULANE' ? materialStock[grade] * 165 : materialStock[grade] * 25} <span className="text-xs">KG</span></p>
+                       <p className="text-4xl font-black text-[#003366]">{materialStock[grade] || 0} <span className="text-sm">{grade === 'IPA' || grade === 'TULANE' ? 'Drums' : 'Bags'}</span></p>
+                       <p className="text-lg font-black text-[#4DB848]">{(materialStock[grade] || 0) * (grade === 'IPA' || grade === 'TULANE' ? 165 : 25)} <span className="text-xs">KG</span></p>
                     </div>
                   </div>
                   <h4 className="text-2xl font-black text-[#003366] uppercase tracking-tighter">{grade} Material Grade</h4>
@@ -321,35 +308,29 @@ const WarehouseSystem: React.FC<WarehouseSystemProps> = ({
               ))}
             </div>
 
-            {canManageMaterials ? (
-              <div className="max-w-2xl mx-auto w-full bg-white rounded-[2rem] md:rounded-[4rem] shadow-2xl overflow-hidden border border-slate-100">
-                 <div className="bg-[#4DB848] p-6 md:p-10 text-[#003366]">
-                   <h3 className="text-2xl md:text-3xl font-black uppercase tracking-tighter">Inventory Inbound</h3>
-                   <p className="text-[#003366]/60 text-[10px] font-black tracking-widest uppercase mt-2">Log New Raw Material Shipments</p>
-                 </div>
-                 <form onSubmit={handleStockAddSubmit} className="p-6 md:p-10 space-y-6 md:space-y-8">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
-                      <div>
-                        <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Material Grade</label>
-                        <select required className="w-full px-4 md:px-6 py-3 md:py-4 bg-slate-50 border-2 border-slate-100 rounded-xl md:rounded-2xl focus:border-[#4DB848] outline-none font-black text-[#003366]" value={stockAddForm.grade} onChange={e => setStockAddForm({...stockAddForm, grade: e.target.value as MaterialGrade})}>
-                          {Object.values(MaterialGrade).map(g => <option key={g} value={g}>{g}</option>)}
-                        </select>
-                      </div>
-                      <div>
-                        <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">
-                          {stockAddForm.grade === 'IPA' || stockAddForm.grade === 'TULANE' ? 'Shipment Drums' : 'Shipment Bags'}
-                        </label>
-                        <input type="number" required step="0.01" min="0.01" className="w-full px-4 md:px-6 py-3 md:py-4 bg-slate-50 border-2 border-slate-100 rounded-xl md:rounded-2xl focus:border-[#4DB848] outline-none font-black text-[#003366] text-lg md:text-xl" value={stockAddForm.bags || ''} onChange={e => setStockAddForm({...stockAddForm, bags: Number(e.target.value)})} />
-                      </div>
+            <div className="max-w-2xl mx-auto w-full bg-white rounded-[2rem] md:rounded-[4rem] shadow-2xl overflow-hidden border border-slate-100">
+               <div className="bg-[#4DB848] p-6 md:p-10 text-[#003366]">
+                 <h3 className="text-2xl md:text-3xl font-black uppercase tracking-tighter">Inventory Inbound</h3>
+                 <p className="text-[#003366]/60 text-[10px] font-black tracking-widest uppercase mt-2">Log New Raw Material Shipments</p>
+               </div>
+               <form onSubmit={handleStockAddSubmit} className="p-6 md:p-10 space-y-6 md:space-y-8">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
+                    <div>
+                      <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Material Grade</label>
+                      <select required className="w-full px-4 md:px-6 py-3 md:py-4 bg-slate-50 border-2 border-slate-100 rounded-xl md:rounded-2xl focus:border-[#4DB848] outline-none font-black text-[#003366]" value={stockAddForm.grade} onChange={e => setStockAddForm({...stockAddForm, grade: e.target.value as MaterialGrade})}>
+                        {Object.values(MaterialGrade).map(g => <option key={g} value={g}>{g}</option>)}
+                      </select>
                     </div>
-                    <button type="submit" className="w-full bg-[#003366] text-white py-4 md:py-6 rounded-2xl md:rounded-3xl font-black text-lg md:text-xl hover:bg-[#002855] transition-all uppercase tracking-widest">Update Master Stock</button>
-                 </form>
-              </div>
-            ) : (
-              <div className="max-w-2xl mx-auto w-full bg-amber-50 border border-amber-200 rounded-[2rem] p-6 md:p-10 text-amber-800 font-black text-[10px] uppercase tracking-widest">
-                Read-only mode: your role cannot update raw material stock.
-              </div>
-            )}
+                    <div>
+                      <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">
+                        {stockAddForm.grade === 'IPA' || stockAddForm.grade === 'TULANE' ? 'Shipment Drums' : 'Shipment Bags'}
+                      </label>
+                      <input type="number" required step="0.01" min="0.01" className="w-full px-4 md:px-6 py-3 md:py-4 bg-slate-50 border-2 border-slate-100 rounded-xl md:rounded-2xl focus:border-[#4DB848] outline-none font-black text-[#003366] text-lg md:text-xl" value={stockAddForm.bags || ''} onChange={e => setStockAddForm({...stockAddForm, bags: Number(e.target.value)})} />
+                    </div>
+                  </div>
+                  <button type="submit" className="w-full bg-[#003366] text-white py-4 md:py-6 rounded-2xl md:rounded-3xl font-black text-lg md:text-xl hover:bg-[#002855] transition-all uppercase tracking-widest">Update Master Stock</button>
+               </form>
+            </div>
           </div>
         )}
 
@@ -363,7 +344,6 @@ const WarehouseSystem: React.FC<WarehouseSystemProps> = ({
                 <h3 className="text-3xl font-black uppercase tracking-tighter">Operational Issuance</h3>
                 <p className="text-[#4DB848] text-[10px] font-black tracking-widest uppercase mt-2">Yield Conversion Framework Active</p>
               </div>
-              {canRecordIssuing ? (
               <form onSubmit={handleIssuingSubmit} className="p-12 space-y-10">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                   <div>
@@ -525,29 +505,24 @@ const WarehouseSystem: React.FC<WarehouseSystemProps> = ({
                   Finalize Operational Batch
                 </button>
               </form>
-              ) : (
-                <div className="p-12">
-                  <div className="bg-amber-50 border border-amber-200 rounded-2xl p-6 text-amber-800 font-black text-[10px] uppercase tracking-widest">
-                    Read-only mode: your role cannot submit operational issuance records.
-                  </div>
-                </div>
-              )}
             </div>
           </div>
         )}
 
         {activeSubTab === 'production' && (
-          <div className="max-w-2xl mx-auto w-full bg-white rounded-[4rem] shadow-2xl overflow-hidden border border-slate-100">
-            <div className="bg-[#4DB848] p-12 text-[#003366] relative">
+          <div className="max-w-2xl mx-auto w-full bg-white rounded-[2rem] md:rounded-[4rem] shadow-2xl overflow-hidden border border-slate-100">
+            <div className="bg-[#4DB848] p-8 md:p-12 text-[#003366] relative">
               <div className="absolute top-0 right-0 p-8 opacity-10">
                 <i className="fa-solid fa-industry text-7xl"></i>
               </div>
-              <h3 className="text-3xl font-black uppercase tracking-tighter">Output Intake</h3>
-              <p className="text-[#003366]/60 text-[10px] font-black tracking-widest uppercase mt-2">Verified Yield from Machine Cluster</p>
+              <h3 className="text-2xl md:text-3xl font-black uppercase tracking-tighter">Production Output Intake</h3>
+              <p className="text-[#003366]/60 text-[9px] md:text-[10px] font-black tracking-widest uppercase mt-2 italic">
+                <i className="fa-solid fa-circle-info mr-1"></i>
+                Audit Only: This form logs production for efficiency comparison and does not update inventory.
+              </p>
             </div>
-            {canRecordProduction ? (
-            <form onSubmit={handleProductionSubmit} className="p-12 space-y-8">
-              <div className="grid grid-cols-2 gap-8">
+            <form onSubmit={handleProductionSubmit} className="p-8 md:p-12 space-y-6 md:space-y-8">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
                 <div>
                   <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Cycle Date</label>
                   <input type="date" required className="w-full px-6 py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:border-[#4DB848] outline-none font-black text-[#003366]" value={productionForm.date} onChange={(e) => setProductionForm({...productionForm, date: e.target.value})} />
@@ -562,7 +537,9 @@ const WarehouseSystem: React.FC<WarehouseSystemProps> = ({
               <div>
                 <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Machine Type</label>
                 <select className="w-full px-6 py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:border-[#4DB848] outline-none font-black text-[#003366]" value={productionForm.machineType} onChange={e => setProductionForm({...productionForm, machineType: e.target.value as MachineType})}>
-                  {Object.values(MachineType).filter(m => m !== MachineType.PRINTING && m !== MachineType.EXTRUSION_ROLLERS).map(m => <option key={m} value={m}>{m}</option>)}
+                  {Object.values(MachineType).filter(m => m !== MachineType.PRINTING).map(m => (
+                    <option key={m} value={m}>{m}</option>
+                  ))}
                 </select>
               </div>
               
@@ -587,15 +564,22 @@ const WarehouseSystem: React.FC<WarehouseSystemProps> = ({
                 </div>
               </div>
 
-              <button type="submit" className="w-full bg-[#003366] text-white py-6 rounded-3xl font-black text-xl hover:bg-[#002855] transition-all shadow-xl uppercase tracking-widest">Authorize Production Entry</button>
-            </form>
-            ) : (
-              <div className="p-12">
-                <div className="bg-amber-50 border border-amber-200 rounded-2xl p-6 text-amber-800 font-black text-[10px] uppercase tracking-widest">
-                  Read-only mode: your role cannot record production output.
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="bg-slate-50 p-8 rounded-[3rem] border-2 border-slate-100">
+                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Rolls Used (Input)</label>
+                  <input type="number" step="0.01" placeholder="0.00" className="w-full px-6 py-4 bg-white border-2 border-slate-100 rounded-2xl focus:border-[#4DB848] outline-none font-black text-2xl text-[#003366]" value={productionForm.rollsUsed || ''} onChange={e => setProductionForm({...productionForm, rollsUsed: Number(e.target.value)})} />
+                </div>
+                <div className="bg-slate-50 p-8 rounded-[3rem] border-2 border-slate-100">
+                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Weight Used (KG Input)</label>
+                  <input type="number" step="0.01" placeholder="0.00" className="w-full px-6 py-4 bg-white border-2 border-slate-100 rounded-2xl focus:border-[#4DB848] outline-none font-black text-2xl text-[#003366]" value={productionForm.kgUsed || ''} onChange={e => setProductionForm({...productionForm, kgUsed: Number(e.target.value)})} />
                 </div>
               </div>
-            )}
+
+              <button type="submit" className="w-full bg-[#003366] text-white py-6 rounded-3xl font-black text-xl hover:bg-[#002855] transition-all shadow-xl uppercase tracking-widest flex items-center justify-center">
+                <i className="fa-solid fa-file-contract mr-3"></i>
+                Authorize Audit Entry
+              </button>
+            </form>
           </div>
         )}
 
@@ -719,7 +703,6 @@ const WarehouseSystem: React.FC<WarehouseSystemProps> = ({
                 <p className="text-[#4DB848] text-[10px] font-black tracking-widest uppercase mt-2">Maintenance & Component Tracking</p>
               </div>
               <div className="p-10">
-                {canManageSpareParts ? (
                 <form onSubmit={handleSparePartSubmit} className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-12 bg-slate-50 p-8 rounded-[3rem] border-2 border-slate-100">
                   <div className="md:col-span-1">
                     <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Part Name</label>
@@ -743,11 +726,6 @@ const WarehouseSystem: React.FC<WarehouseSystemProps> = ({
                     <button type="submit" className="w-full bg-[#4DB848] text-[#003366] py-4 rounded-2xl font-black uppercase tracking-widest hover:bg-[#45a641] transition-all">Add to Spare Inventory</button>
                   </div>
                 </form>
-                ) : (
-                  <div className="mb-12 bg-amber-50 border border-amber-200 rounded-2xl p-6 text-amber-800 font-black text-[10px] uppercase tracking-widest">
-                    Read-only mode: your role cannot manage spare-parts inventory.
-                  </div>
-                )}
 
                 <div className="overflow-x-auto">
                   <table className="w-full">
@@ -792,7 +770,6 @@ const WarehouseSystem: React.FC<WarehouseSystemProps> = ({
                 <h3 className="text-3xl font-black uppercase tracking-tighter">Spare Issuance Form</h3>
                 <p className="text-[#4DB848] text-[10px] font-black tracking-widest uppercase mt-2">Record Component Deployment to Production</p>
               </div>
-              {canRecordSpareIssuance ? (
               <form onSubmit={handleSpareIssuanceSubmit} className="p-12 space-y-8">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                   <div>
@@ -823,13 +800,6 @@ const WarehouseSystem: React.FC<WarehouseSystemProps> = ({
                 </div>
                 <button type="submit" className="w-full bg-[#003366] text-white py-6 rounded-3xl font-black text-xl hover:bg-[#002855] transition-all uppercase tracking-widest">Finalize Spare Issuance</button>
               </form>
-              ) : (
-                <div className="p-12">
-                  <div className="bg-amber-50 border border-amber-200 rounded-2xl p-6 text-amber-800 font-black text-[10px] uppercase tracking-widest">
-                    Read-only mode: your role cannot submit spare issuance records.
-                  </div>
-                </div>
-              )}
             </div>
 
             <div className="bg-white rounded-[3rem] shadow-xl border border-slate-100 overflow-hidden">
