@@ -1,4 +1,4 @@
-xport enum ProductType {
+export enum ProductType {
   ROLLER = 'Roller',
   PACKING_BAG = 'Packing Bag'
 }
