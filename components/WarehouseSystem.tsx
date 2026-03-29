@@ -1,6 +1,6 @@
 
 import React, { useState, useMemo } from 'react';
-import { IssuingRecord, ProductionRecord, Shift, MachineType, MaterialGrade, MaterialStock, SparePart, SparePartIssuance } from '../types';
+import { IssuingRecord, ProductionRecord, Shift, MachineType, MaterialGrade, MaterialStock, SparePart, SparePartIssuance, MaterialInboundRecord } from '../types';
 
 interface WarehouseSystemProps {
   issuingRecords: IssuingRecord[];
@@ -14,6 +14,7 @@ interface WarehouseSystemProps {
   onAddSparePart: (part: SparePart) => void;
   onUpdateSparePart: (part: SparePart) => void;
   onAddSpareIssuance: (iss: SparePartIssuance) => void;
+  onAddMaterialInbound: (rec: MaterialInboundRecord) => void;
 }
 
 const WarehouseSystem: React.FC<WarehouseSystemProps> = ({ 
@@ -27,7 +28,8 @@ const WarehouseSystem: React.FC<WarehouseSystemProps> = ({
   onUpdateMaterialStock,
   onAddSparePart,
   onUpdateSparePart,
-  onAddSpareIssuance
+  onAddSpareIssuance,
+  onAddMaterialInbound
 }) => {
   const [activeSubTab, setActiveSubTab] = useState<'issuing' | 'production' | 'comparison' | 'materials' | 'spare-parts' | 'spare-issuing'>('production');
   
@@ -59,7 +61,8 @@ const WarehouseSystem: React.FC<WarehouseSystemProps> = ({
 
   const [stockAddForm, setStockAddForm] = useState({
     grade: MaterialGrade.HD,
-    bags: 0
+    bags: 0,
+    date: new Date().toISOString().split('T')[0]
   });
 
   const [sparePartForm, setSparePartForm] = useState({
@@ -161,10 +164,21 @@ const WarehouseSystem: React.FC<WarehouseSystemProps> = ({
   const handleStockAddSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (stockAddForm.bags <= 0) return alert("Quantity must be greater than zero.");
+    
     onUpdateMaterialStock(stockAddForm.grade, stockAddForm.bags);
+    
+    onAddMaterialInbound({
+      id: `inb-${Date.now()}`,
+      grade: stockAddForm.grade,
+      amount: stockAddForm.bags,
+      date: stockAddForm.date,
+      timestamp: Date.now(),
+      recordedBy: 'Warehouse Officer'
+    });
+
     const unit = stockAddForm.grade === 'IPA' || stockAddForm.grade === 'TULANE' ? 'drums' : 'bags';
     alert(`Added ${stockAddForm.bags} ${unit} of ${stockAddForm.grade} to inventory.`);
-    setStockAddForm({ ...stockAddForm, bags: 0 });
+    setStockAddForm({ ...stockAddForm, bags: 0, date: new Date().toISOString().split('T')[0] });
   };
 
   const handleSparePartSubmit = (e: React.FormEvent) => {
@@ -314,7 +328,7 @@ const WarehouseSystem: React.FC<WarehouseSystemProps> = ({
                  <p className="text-[#003366]/60 text-[10px] font-black tracking-widest uppercase mt-2">Log New Raw Material Shipments</p>
                </div>
                <form onSubmit={handleStockAddSubmit} className="p-6 md:p-10 space-y-6 md:space-y-8">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
                     <div>
                       <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Material Grade</label>
                       <select required className="w-full px-4 md:px-6 py-3 md:py-4 bg-slate-50 border-2 border-slate-100 rounded-xl md:rounded-2xl focus:border-[#4DB848] outline-none font-black text-[#003366]" value={stockAddForm.grade} onChange={e => setStockAddForm({...stockAddForm, grade: e.target.value as MaterialGrade})}>
@@ -326,6 +340,10 @@ const WarehouseSystem: React.FC<WarehouseSystemProps> = ({
                         {stockAddForm.grade === 'IPA' || stockAddForm.grade === 'TULANE' ? 'Shipment Drums' : 'Shipment Bags'}
                       </label>
                       <input type="number" required step="0.01" min="0.01" className="w-full px-4 md:px-6 py-3 md:py-4 bg-slate-50 border-2 border-slate-100 rounded-xl md:rounded-2xl focus:border-[#4DB848] outline-none font-black text-[#003366] text-lg md:text-xl" value={stockAddForm.bags || ''} onChange={e => setStockAddForm({...stockAddForm, bags: Number(e.target.value)})} />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Inbound Date</label>
+                      <input type="date" required className="w-full px-4 md:px-6 py-3 md:py-4 bg-slate-50 border-2 border-slate-100 rounded-xl md:rounded-2xl focus:border-[#4DB848] outline-none font-black text-[#003366]" value={stockAddForm.date} onChange={e => setStockAddForm({...stockAddForm, date: e.target.value})} />
                     </div>
                   </div>
                   <button type="submit" className="w-full bg-[#003366] text-white py-4 md:py-6 rounded-2xl md:rounded-3xl font-black text-lg md:text-xl hover:bg-[#002855] transition-all uppercase tracking-widest">Update Master Stock</button>
