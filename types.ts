@@ -135,9 +135,14 @@ export interface InventoryStats {
 export interface SparePart {
   id: string;
   name: string;
+  partNumber: string;
+  category: string;
   quantity: number;
-  value: number;
-  machineType: MachineType;
+  unit: string;
+  minStock: number;
+  location: string;
+  date?: string;      // Added
+  timestamp?: number; // Added (as number for frontend)
 }
 
 export interface SparePartIssuance {

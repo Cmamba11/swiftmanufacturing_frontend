@@ -69,7 +69,8 @@ const WarehouseSystem: React.FC<WarehouseSystemProps> = ({
     name: '',
     quantity: 0,
     value: 0,
-    machineType: MachineType.EXTRUSION_ROLLERS
+    machineType: MachineType.EXTRUSION_ROLLERS,
+    date: new Date().toISOString().split('T')[0]
   });
 
   const [spareIssuanceForm, setSpareIssuanceForm] = useState({
@@ -186,11 +187,12 @@ const WarehouseSystem: React.FC<WarehouseSystemProps> = ({
     if (!sparePartForm.name) return alert("Part name is required.");
     const newPart: SparePart = {
       ...sparePartForm,
-      id: `sp-${Date.now()}`
+      id: `sp-${Date.now()}`,
+      timestamp: Date.now()
     };
     onAddSparePart(newPart);
     alert(`Spare part ${sparePartForm.name} added.`);
-    setSparePartForm({ name: '', quantity: 0, value: 0, machineType: MachineType.EXTRUSION_ROLLERS });
+    setSparePartForm({ name: '', quantity: 0, value: 0, machineType: MachineType.EXTRUSION_ROLLERS, date: new Date().toISOString().split('T')[0] });
   };
 
   const handleSpareIssuanceSubmit = (e: React.FormEvent) => {
@@ -721,7 +723,7 @@ const WarehouseSystem: React.FC<WarehouseSystemProps> = ({
                 <p className="text-[#4DB848] text-[10px] font-black tracking-widest uppercase mt-2">Maintenance & Component Tracking</p>
               </div>
               <div className="p-10">
-                <form onSubmit={handleSparePartSubmit} className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-12 bg-slate-50 p-8 rounded-[3rem] border-2 border-slate-100">
+                <form onSubmit={handleSparePartSubmit} className="grid grid-cols-1 md:grid-cols-5 gap-6 mb-12 bg-slate-50 p-8 rounded-[3rem] border-2 border-slate-100">
                   <div className="md:col-span-1">
                     <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Part Name</label>
                     <input type="text" required className="w-full px-4 py-3 bg-white border-2 border-slate-200 rounded-xl focus:border-[#4DB848] outline-none font-black text-[#003366]" value={sparePartForm.name} onChange={e => setSparePartForm({...sparePartForm, name: e.target.value})} />
@@ -735,12 +737,16 @@ const WarehouseSystem: React.FC<WarehouseSystemProps> = ({
                     <input type="number" required min="0" step="0.01" className="w-full px-4 py-3 bg-white border-2 border-slate-200 rounded-xl focus:border-[#4DB848] outline-none font-black text-[#003366]" value={sparePartForm.value || ''} onChange={e => setSparePartForm({...sparePartForm, value: Number(e.target.value)})} />
                   </div>
                   <div>
+                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Date</label>
+                    <input type="date" required className="w-full px-4 py-3 bg-white border-2 border-slate-200 rounded-xl focus:border-[#4DB848] outline-none font-black text-[#003366]" value={sparePartForm.date} onChange={e => setSparePartForm({...sparePartForm, date: e.target.value})} />
+                  </div>
+                  <div>
                     <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Machine Process</label>
                     <select className="w-full px-4 py-3 bg-white border-2 border-slate-200 rounded-xl focus:border-[#4DB848] outline-none font-black text-[#003366]" value={sparePartForm.machineType} onChange={e => setSparePartForm({...sparePartForm, machineType: e.target.value as MachineType})}>
                       {Object.values(MachineType).map(m => <option key={m} value={m}>{m}</option>)}
                     </select>
                   </div>
-                  <div className="md:col-span-4">
+                  <div className="md:col-span-5">
                     <button type="submit" className="w-full bg-[#4DB848] text-[#003366] py-4 rounded-2xl font-black uppercase tracking-widest hover:bg-[#45a641] transition-all">Add to Spare Inventory</button>
                   </div>
                 </form>
@@ -749,6 +755,7 @@ const WarehouseSystem: React.FC<WarehouseSystemProps> = ({
                   <table className="w-full">
                     <thead>
                       <tr className="text-[10px] font-black uppercase tracking-widest text-slate-400 border-b border-slate-100">
+                        <th className="px-6 py-4 text-left">Date</th>
                         <th className="px-6 py-4 text-left">Part Name</th>
                         <th className="px-6 py-4 text-left">Associated Machine</th>
                         <th className="px-6 py-4 text-right">Stock Level</th>
@@ -759,6 +766,7 @@ const WarehouseSystem: React.FC<WarehouseSystemProps> = ({
                     <tbody className="divide-y divide-slate-50">
                       {spareParts.map(part => (
                         <tr key={part.id} className="hover:bg-slate-50/50 transition-colors">
+                          <td className="px-6 py-5 font-black text-[#003366] text-xs">{part.date}</td>
                           <td className="px-6 py-5 font-black text-[#003366]">{part.name}</td>
                           <td className="px-6 py-5">
                             <span className="text-[9px] font-black px-3 py-1 bg-slate-100 text-slate-500 rounded-full uppercase">{part.machineType}</span>
@@ -863,3 +871,4 @@ const WarehouseSystem: React.FC<WarehouseSystemProps> = ({
 };
 
 export default WarehouseSystem;
+
