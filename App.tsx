@@ -445,16 +445,21 @@ const App: React.FC = () => {
             canSubmit={hasPermission('dispatch_goods') || hasPermission('record_issuance')}
           />
         );
-      case 'ledger':
-        return (
-          <Ledger
-            products={products}
-            transactions={transactions}
-            customers={customers}
-            onVoid={voidTransaction}
-            canVoid={hasPermission('void_transactions')}
-          />
-        );
+    case 'ledger':
+  return (
+    <Ledger
+      products={products}
+      transactions={transactions}
+      customers={customers}
+      issuingRecords={issuingRecords}
+      sparePartIssuances={sparePartIssuances}
+      spareParts={spareParts}
+      materialInboundRecords={[]} // replace later with API data if you have it
+      onVoid={voidTransaction}
+      canVoid={hasPermission('void_transactions')}
+    />
+  );
+           
       case 'customers':
         return (
           <CustomerInsights
