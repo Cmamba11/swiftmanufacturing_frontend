@@ -244,4 +244,4 @@ export const api = {
   deleteProductionRecord: (id: string) => fetch(`/api/production-records/${id}`, { method: 'DELETE' }).then(res => res.json()),
 };
 
-};
+
