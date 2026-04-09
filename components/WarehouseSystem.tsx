@@ -679,7 +679,7 @@ const WarehouseSystem: React.FC<WarehouseSystemProps> = ({
                         </div>
                       </td>
                       <td className="px-6 py-6 text-right font-black text-slate-500 text-sm">
-                        {item.expected.toFixed(1)}
+                        {Number(item.expected ?? 0).toFixed(1)}
                         {item.expectedCount ? (
                           <p className="text-[9px] font-bold text-slate-400">
                             {Math.round(item.expectedCount).toLocaleString()} Bags
@@ -687,7 +687,7 @@ const WarehouseSystem: React.FC<WarehouseSystemProps> = ({
                         ) : null}
                       </td>
                       <td className={`px-6 py-6 text-right font-black text-lg ${item.status === 'PASS' ? 'text-[#4DB848]' : item.status === 'PENDING' ? 'text-slate-300' : 'text-orange-500'}`}>
-                        {item.actual > 0 ? item.actual.toFixed(2) : '0.00'}
+                        {Number(item.actual ?? 0).toFixed(2)}
                         {item.actualCount ? (
                           <p className="text-[9px] font-bold text-slate-300">
                             {item.actualCount} {item.machineType === MachineType.CUTTING ? 'Bags' : 'Rolls'}
@@ -695,7 +695,9 @@ const WarehouseSystem: React.FC<WarehouseSystemProps> = ({
                         ) : null}
                       </td>
                       <td className={`px-6 py-6 text-right font-mono font-black text-sm ${item.status === 'PENDING' ? 'text-slate-200' : (item.difference >= 0 ? 'text-[#4DB848]' : 'text-orange-500')}`}>
-                        {item.status === 'PENDING' ? '--' : `${item.difference >= 0 ? '+' : ''}${item.difference.toFixed(2)}`}
+                        {item.status === 'PENDING'
+  ? '--'
+  : `${Number(item.difference ?? 0) >= 0 ? '+' : ''}${Number(item.difference ?? 0).toFixed(2)}`}
                       </td>
                       <td className="px-10 py-6 text-center">
                         <span className={`inline-flex items-center px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest ${
@@ -718,7 +720,7 @@ const WarehouseSystem: React.FC<WarehouseSystemProps> = ({
                     </tr>
                   )) : (
                     <tr>
-                      <td colSpan={7} className="py-24 text-center text-slate-200 font-black uppercase tracking-[0.3em] italic">
+                      <td colSpan={8} className="py-24 text-center text-slate-200 font-black uppercase tracking-[0.3em] italic">
                         Lifecycle logs unavailable
                       </td>
                     </tr>
@@ -785,8 +787,8 @@ const WarehouseSystem: React.FC<WarehouseSystemProps> = ({
                             <span className="text-[9px] font-black px-3 py-1 bg-slate-100 text-slate-500 rounded-full uppercase">{part.machineType}</span>
                           </td>
                           <td className="px-6 py-5 text-right font-black text-[#003366]">{part.quantity}</td>
-                          <td className="px-6 py-5 text-right font-black text-slate-400">${part.value.toFixed(2)}</td>
-                          <td className="px-6 py-5 text-right font-black text-[#4DB848]">${(part.quantity * part.value).toFixed(2)}</td>
+                          <td className="px-6 py-5 text-right font-black text-slate-400">${(Number(part.value ?? 0)).toFixed(2)}</td>
+                          <td className="px-6 py-5 text-right font-black text-[#4DB848]">${(Number(part.quantity ?? 0) * Number(part.value ?? 0)).toFixed(2)}</td>
                         </tr>
                       ))}
                       {spareParts.length === 0 && (
@@ -861,7 +863,7 @@ const WarehouseSystem: React.FC<WarehouseSystemProps> = ({
                         return (
                           <tr key={iss.id} className="text-[11px]">
                             <td className="px-6 py-4 font-bold text-slate-500">{iss.date}</td>
-                            <td className="px-6 py-4 font-black text-[#003366]">{part?.name || 'Unknown Part'}</td>
+                            <td className="px-6 py-4 font-black text-[#003366]">{part?.name ?? 'Unknown Part'}</td>
                             <td className="px-6 py-4 font-bold text-slate-600">{iss.issuedTo}</td>
                             <td className="px-6 py-4 text-right font-black text-[#4DB848]">{iss.quantity}</td>
                           </tr>
