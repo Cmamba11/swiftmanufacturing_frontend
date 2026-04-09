@@ -403,6 +403,31 @@ const App: React.FC = () => {
     }
   };
 
+
+  const deleteComparisonEntry = async (date: string, shift: string, machineType: string) => {
+  if (!confirm('Delete this batch and reverse materials to inventory?')) return;
+
+  // 1. Find the records in your current state
+  const matchingIssuances = issuingRecords.filter(iss => iss.date === date && iss.shift === shift && iss.machineType === machineType);
+  const matchingProduction = productionRecords.filter(prod => prod.date === date && prod.shift === shift && prod.machineType === machineType);
+
+  // 2. Call the delete APIs
+  for (const iss of matchingIssuances) await api.deleteIssuingRecord(iss.id);
+  for (const prod of matchingProduction) await api.deleteProductionRecord(prod.id);
+
+  // 3. Refresh your local state
+  const [newIss, newProd, newStock] = await Promise.all([
+    api.getIssuingRecords(),
+    api.getProductionRecords(),
+    api.getMaterialStock()
+  ]);
+
+  setIssuingRecords(newIss);
+  setProductionRecords(newProd);
+  setMaterialStock(newStock);
+};
+
+
   const renderContent = () => {
     switch (activeTab) {
       case 'dashboard':
@@ -490,6 +515,7 @@ const App: React.FC = () => {
             onAddSparePart={addSparePart}
             onUpdateSparePart={updateSparePart}
             onAddSpareIssuance={addSpareIssuance}
+            onDeleteComparison={deleteComparisonEntry}
             canRecordIssuing={hasPermission('record_issuance')}
             canRecordProduction={hasPermission('production_intake')}
             canManageMaterials={hasPermission('manage_materials')}

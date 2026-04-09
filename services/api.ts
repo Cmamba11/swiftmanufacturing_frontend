@@ -239,4 +239,9 @@ export const api = {
       method: 'POST',
       body: JSON.stringify(issuance),
     }),
+
+  deleteIssuingRecord: (id: string) => fetch(`/api/issuing-records/${id}`, { method: 'DELETE' }).then(res => res.json()),
+  deleteProductionRecord: (id: string) => fetch(`/api/production-records/${id}`, { method: 'DELETE' }).then(res => res.json()),
+};
+
 };

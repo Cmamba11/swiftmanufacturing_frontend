@@ -34,18 +34,16 @@ const Receiving: React.FC<ReceivingProps> = ({ products, customers, onAddTransac
     
     const timestamp = new Date(formData.date).getTime();
 
-    onAddTransaction({
-      id: `trx-${Date.now()}`,
-      productId: 'prod-bags',
-      type: TransactionType.PRODUCTION_IN,
-      quantity: Number(formData.quantity),
-      weight: 0,
-      shift: formData.shift,
-      referenceNumber: formData.referenceNumber || `PROD-${Date.now().toString().slice(-6)}`,
-      timestamp: timestamp,
-      recordedBy: userRole,
-      notes: formData.notes
-    });
+   
+onAddProduction({
+  id: `prod-rec-${Date.now()}`,
+  date: formData.date,
+  shift: formData.shift,
+  machineType: MachineType.EXTRUSION_BAGS,
+  actualOutputKg: Number(formData.weight),
+  actualCount: Number(formData.quantity),
+  timestamp: Date.now()
+});
 
     setFormData({ 
       productId: '', 

@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo } from 'react';
 import { IssuingRecord, ProductionRecord, Shift, MachineType, MaterialGrade, MaterialStock, SparePart, SparePartIssuance, MaterialInboundRecord } from '../types';
 
@@ -15,6 +14,8 @@ interface WarehouseSystemProps {
   onUpdateSparePart: (part: SparePart) => void;
   onAddSpareIssuance: (iss: SparePartIssuance) => void;
   onAddMaterialInbound: (rec: MaterialInboundRecord) => void;
+  onDeleteComparison: (date: string, shift: string, machineType: string) => void;
+
 }
 
 const WarehouseSystem: React.FC<WarehouseSystemProps> = ({ 
@@ -29,8 +30,10 @@ const WarehouseSystem: React.FC<WarehouseSystemProps> = ({
   onAddSparePart,
   onUpdateSparePart,
   onAddSpareIssuance,
-  onAddMaterialInbound
+  onAddMaterialInbound,
+  onDeleteComparison
 }) => {
+
   const [activeSubTab, setActiveSubTab] = useState<'issuing' | 'production' | 'comparison' | 'materials' | 'spare-parts' | 'spare-issuing'>('production');
   
   const [issuingForm, setIssuingForm] = useState({
@@ -632,6 +635,7 @@ const WarehouseSystem: React.FC<WarehouseSystemProps> = ({
                     <th className="px-6 py-6 text-right">Actual (KG)</th>
                     <th className="px-6 py-6 text-right">Variance</th>
                     <th className="px-10 py-6 text-center">Audit Status</th>
+                    <th className="px-6 py-6 text-center">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
@@ -701,6 +705,15 @@ const WarehouseSystem: React.FC<WarehouseSystemProps> = ({
                         }`}>
                           {item.status === 'PASS' ? 'OPTIMAL' : item.status === 'PENDING' ? 'WAITING' : 'SHORTFALL'}
                         </span>
+                      </td>
+                      <td className="px-6 py-6 text-center">
+                        <button 
+                          onClick={() => onDeleteComparison(item.date, item.shift as any, item.machineType as any)}
+                          className="w-10 h-10 flex items-center justify-center text-slate-300 hover:text-orange-600 hover:bg-orange-50 rounded-xl transition-all"
+                          title="Delete Batch & Reverse Materials"
+                        >
+                          <i className="fa-solid fa-trash-can"></i>
+                        </button>
                       </td>
                     </tr>
                   )) : (
