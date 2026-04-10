@@ -40,7 +40,7 @@ function clearToken() {
 /* =========================
    SAFE FETCH CORE
 ========================= */
-class ApiError extends Error {
+export class ApiError extends Error {
   status: number;
   details?: unknown;
 
