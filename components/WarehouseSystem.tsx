@@ -154,16 +154,25 @@ const WarehouseSystem: React.FC<WarehouseSystemProps> = ({
   };
 
   const handleProductionSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const record: ProductionRecord = {
-      ...productionForm,
-      id: `prod-rec-${Date.now()}`,
-      timestamp: Date.now()
-    };
-    onAddProduction(record);
-    alert(`Production recorded for ${productionForm.machineType}.`);
-    setProductionForm({ ...productionForm, actualOutputKg: 0, actualCount: 0, rollsUsed: 0, kgUsed: 0 });
+  e.preventDefault();
+
+  const record: ProductionRecord = {
+    ...productionForm,
+    id: `prod-rec-${Date.now()}`,
+    timestamp: Date.now()
   };
+
+  onAddProduction(record); // ONLY THIS
+  alert(`Production recorded for ${productionForm.machineType}.`);
+
+  setProductionForm({
+    ...productionForm,
+    actualOutputKg: 0,
+    actualCount: 0,
+    rollsUsed: 0,
+    kgUsed: 0
+  });
+};
 
   const handleStockAddSubmit = (e: React.FormEvent) => {
     e.preventDefault();

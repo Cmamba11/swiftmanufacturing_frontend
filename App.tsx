@@ -302,30 +302,29 @@ const App: React.FC = () => {
   };
 
   const addProductionRecord = async (record: ProductionRecord) => {
-    try {
-      const newRecord = await api.addProductionRecord(record);
-      setProductionRecords((prev) => {
-        const filtered = prev.filter(
-          (existing) => !(existing.date === record.date && existing.shift === record.shift && existing.machineType === record.machineType),
-        );
-        return [newRecord, ...filtered];
-      });
+  try {
+    const newRecord = await api.addProductionRecord(record);
 
-      await addTransaction({
-        id: `trx-prod-${Date.now()}`,
-        productId: 'prod-bags',
-        type: TransactionType.PRODUCTION_IN,
-        quantity: record.actualCount || record.actualOutputKg * 84.5,
-        weight: record.actualOutputKg,
-        referenceNumber: `PROD-${record.date}-${record.shift.slice(0, 1)}`,
-        timestamp: Date.now(),
-        recordedBy: currentUser?.name ?? userRole,
-        notes: `Production from ${record.machineType}`,
-      });
-    } catch (error) {
-      handleApiError(error, 'Failed to add production record.');
-    }
-  };
+    setProductionRecords((prev) => {
+      const filtered = prev.filter(
+        (existing) =>
+          !(
+            existing.date === record.date &&
+            existing.shift === record.shift &&
+            existing.machineType === record.machineType
+          ),
+      );
+
+      return [newRecord, ...filtered];
+    });
+
+    // ✅ ONLY AUDIT LOG — NO INVENTORY UPDATE
+    console.log('Production audit saved:', newRecord);
+
+  } catch (error) {
+    handleApiError(error, 'Failed to add production record.');
+  }
+ };
 
   const updateMaterialStock = async (grade: MaterialGrade, amount: number) => {
     try {
