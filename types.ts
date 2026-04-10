@@ -91,7 +91,7 @@ export interface Transaction {
 }
 
 export interface IssuingRecord {
-  id: string;
+  id?: string;
   date: string;
   shift: Shift;
   machineType: MachineType;

@@ -214,11 +214,11 @@ export const api = {
   ========================= */
   getIssuingRecords: () => request<IssuingRecord[]>('/issuing-records'),
 
-  addIssuingRecord: (r: IssuingRecord) =>
-    request<IssuingRecord>('/issuing-records', {
-      method: 'POST',
-      body: JSON.stringify(r),
-    }),
+  addIssuingRecord: (record: Omit<IssuingRecord, 'id'>) =>
+  request('/issuing-records', {
+    method: 'POST',
+    body: JSON.stringify(record),
+  }),
 
   deleteIssuingRecord: (id: string) =>
     request<{ success: boolean }>(`/issuing-records/${id}`, {
