@@ -225,7 +225,7 @@ export const api = {
       method: 'DELETE',
     }),
 
-ddeleteComparison: async (date: string, shift: string, machineType: string) => {
+deleteComparison: async (date: string, shift: string, machineType: string) => {
   const issuingRecords = await request<IssuingRecord[]>('/issuing-records');
   const matching = issuingRecords.filter(
     (r) => r.date === date && r.shift === shift && r.machineType === machineType
