@@ -225,25 +225,25 @@ export const api = {
       method: 'DELETE',
     }),
 
-deleteComparison: async (date: string, shift: string, machineType: string) => {
-    const issuingRecords = await request<IssuingRecord[]>('/issuing-records');
-    const matching = issuingRecords.filter(
-      (r) => r.date === date && r.shift === shift && r.machineType === machineType
-    );
-    for (const record of matching) {
-      if (record.id) {
-        await request(`/issuing-records/${record.id}`, { method: 'DELETE' });
-      }
+ddeleteComparison: async (date: string, shift: string, machineType: string) => {
+  const issuingRecords = await request<IssuingRecord[]>('/issuing-records');
+  const matching = issuingRecords.filter(
+    (r) => r.date === date && r.shift === shift && r.machineType === machineType
+  );
+  for (const record of matching) {
+    if (record.id && !record.id.startsWith('iss-')) {
+      await request(`/issuing-records/${record.id}`, { method: 'DELETE' });
     }
+  }
 
-    const productionRecords = await request<ProductionRecord[]>('/production-records');
-    const matchingProd = productionRecords.find(
-      (r) => r.date === date && r.shift === shift && r.machineType === machineType
-    );
-    if (matchingProd?.id) {
-      await request(`/production-records/${matchingProd.id}`, { method: 'DELETE' });
-    }
-  },
+  const productionRecords = await request<ProductionRecord[]>('/production-records');
+  const matchingProd = productionRecords.find(
+    (r) => r.date === date && r.shift === shift && r.machineType === machineType
+  );
+  if (matchingProd?.id && !matchingProd.id.startsWith('prod-rec-')) {
+    await request(`/production-records/${matchingProd.id}`, { method: 'DELETE' });
+  }
+},
 
   /* =========================
      PRODUCTION RECORDS
