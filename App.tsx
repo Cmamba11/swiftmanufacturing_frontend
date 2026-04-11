@@ -403,30 +403,41 @@ const App: React.FC = () => {
   };
 
 
-  const deleteComparisonEntry = async (date: string, shift: string, machineType: string) => {
-  if (!confirm('Delete this batch and reverse materials to inventory?')) return;
+  const deleteComparisonEntry = async (
+  date: string,
+  shift: Shift,
+  machineType: MachineType,
+ ) => {
+  try {
+    await api.deleteComparison(date, shift, machineType);
 
-  // 1. Find the records in your current state
-  const matchingIssuances = issuingRecords.filter(iss => iss.date === date && iss.shift === shift && iss.machineType === machineType);
-  const matchingProduction = productionRecords.filter(prod => prod.date === date && prod.shift === shift && prod.machineType === machineType);
+    setIssuingRecords((prev) =>
+      prev.filter(
+        (r) =>
+          !(
+            r.date === date &&
+            r.shift === shift &&
+            r.machineType === machineType
+          ),
+      ),
+    );
 
-  // 2. Call the delete APIs
-  for (const iss of matchingIssuances) await api.deleteIssuingRecord(iss.id);
-  for (const prod of matchingProduction) await api.deleteProductionRecord(prod.id);
+    setProductionRecords((prev) =>
+      prev.filter(
+        (r) =>
+          !(
+            r.date === date &&
+            r.shift === shift &&
+            r.machineType === machineType
+          ),
+      ),
+    );
 
-  // 3. Refresh your local state
-  const [newIss, newProd, newStock] = await Promise.all([
-    api.getIssuingRecords(),
-    api.getProductionRecords(),
-    api.getMaterialStock()
-  ]);
-
-  setIssuingRecords(newIss);
-  setProductionRecords(newProd);
-  setMaterialStock(newStock);
-};
-
-
+    console.log('Comparison deleted successfully');
+  } catch (err) {
+    console.error('Delete failed:', err);
+  }
+ };
   const renderContent = () => {
     switch (activeTab) {
       case 'dashboard':

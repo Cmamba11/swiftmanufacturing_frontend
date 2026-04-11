@@ -130,7 +130,7 @@ const WarehouseSystem: React.FC<WarehouseSystemProps> = ({
     }
     
     const record: IssuingRecord = {
-      id: `iss-${Date.now()}`,
+      //id: `iss-${Date.now()}`,
       date: issuingForm.date,
       shift: issuingForm.shift,
       machineType: issuingForm.machineType,
