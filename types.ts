@@ -184,7 +184,7 @@ export interface UpdateUserInput {
 }
 
 export const ROLE_PERMISSIONS = {
-  [UserRole.ADMIN]: ['view_all', 'edit_products', 'delete_products', 'edit_customers', 'delete_customers', 'void_transactions', 'manage_users', 'customer_asset_adjustment', 'record_issuance', 'warehouse_control', 'manage_materials', 'production_intake', 'dispatch_goods'],
+ [UserRole.ADMIN]: ['view_all', 'edit_products', 'delete_products', 'edit_customers', 'delete_customers', 'void_transactions', 'manage_users', 'customer_asset_adjustment', 'record_issuance', 'warehouse_control', 'manage_materials', 'manage_inventory', 'dispatch_goods'],
   [UserRole.MANAGEMENT]: ['view_all', 'warehouse_control'],
   [UserRole.PRODUCTION_SUPERVISOR]: ['view_all', 'production_intake', 'warehouse_control'],
   [UserRole.WAREHOUSE_OFFICER]: ['view_all', 'production_intake', 'dispatch_goods', 'warehouse_control', 'manage_materials'],
