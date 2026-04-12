@@ -1,6 +1,6 @@
 
 import React, { useState, useMemo } from 'react';
-import { Product, ProductType, UnitType, Transaction, TransactionType, UserRole, InventoryStats, Customer, StockMetric } from '../types';
+import { Product, ProductType, UnitType, Transaction, TransactionType, UserRole, InventoryStats, Customer, StockMetric, Shift, MachineType, ProductionRecord } from '../types';
 import { calculateCustomerInventory } from '../utils';
 
 interface ProductMasterProps {
@@ -15,22 +15,59 @@ interface ProductMasterProps {
   userRole: UserRole;
   canEdit: boolean;
   canDelete: boolean;
+  canManageInventory: boolean;
 }
 
 const ProductMaster: React.FC<ProductMasterProps> = ({ 
-  products, customers, transactions, stats, onAdd, onUpdate, onDelete, onAddTransaction, userRole, canEdit, canDelete 
+  products, customers, transactions, stats, onAdd, onUpdate, onDelete, onAddTransaction, userRole, canEdit, canDelete, canManageInventory 
 }) => {
-  // Filter products to only show Packing Bags for Factory Inventory
-  const factoryProducts = useMemo(() => products.filter(p => p.id === 'prod-bags'), [products]);
+  const [showStockModal, setShowStockModal] = useState(false);
+  const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
+  const [stockForm, setStockForm] = useState({
+    quantity: 0,
+    weight: 0,
+    date: new Date().toISOString().split('T')[0],
+    shift: Shift.DAY,
+    referenceNumber: '',
+    notes: ''
+  });
 
-  const getPartnerBreakdown = (productId: string) => {
-    return customers.map(c => {
-      const inv = calculateCustomerInventory(c.id, transactions, products);
-      return {
-        customerName: c.name,
-        metrics: inv[productId] || { quantity: 0, weight: 0 }
-      };
-    }).filter(p => p.metrics.quantity !== 0 || p.metrics.weight !== 0);
+  // Show only 'Packing Bags' in Factory Inventory
+  const factoryProducts = useMemo(() => {
+    return products.filter(p => p.type === ProductType.PACKING_BAG);
+  }, [products]);
+
+  const handleStockSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedProductId || stockForm.quantity <= 0) return;
+
+    // Use the selected date for the timestamp
+    const timestamp = new Date(stockForm.date).getTime();
+
+    // Update Factory Inventory
+    onAddTransaction({
+      id: `trx-stock-${Date.now()}`,
+      productId: selectedProductId,
+      type: TransactionType.PRODUCTION_IN,
+      quantity: Number(stockForm.quantity),
+      weight: Number(stockForm.weight),
+      shift: stockForm.shift,
+      referenceNumber: stockForm.referenceNumber || `STK-${stockForm.date}`,
+      timestamp: timestamp,
+      recordedBy: userRole,
+      notes: stockForm.notes || 'Manual Stock Update'
+    });
+
+    setShowStockModal(false);
+    setStockForm({
+      quantity: 0,
+      weight: 0,
+      date: new Date().toISOString().split('T')[0],
+      shift: Shift.DAY,
+      referenceNumber: '',
+      notes: ''
+    });
+    alert('Inventory updated successfully.');
   };
 
   return (
@@ -40,10 +77,27 @@ const ProductMaster: React.FC<ProductMasterProps> = ({
           <h2 className="text-3xl md:text-4xl font-black text-[#003366] tracking-tighter uppercase">Factory Inventory</h2>
           <p className="text-slate-500 font-medium italic">Finished goods tracking for Packing Bags.</p>
         </div>
+        {canManageInventory && factoryProducts.length > 0 ? (
+          <button 
+            onClick={() => {
+              setSelectedProductId(factoryProducts[0].id);
+              setShowStockModal(true);
+            }}
+            className="bg-[#4DB848] text-[#003366] px-8 py-4 rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-[#45a641] transition-all shadow-lg shadow-green-900/10 flex items-center group"
+          >
+            <i className="fa-solid fa-plus-circle mr-3 text-xl group-hover:rotate-90 transition-transform"></i>
+            Add Stock
+          </button>
+        ) : !canManageInventory && (
+          <div className="flex items-center bg-slate-100 px-6 py-3 rounded-2xl border border-slate-200">
+            <i className="fa-solid fa-lock text-slate-400 mr-3"></i>
+            <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">View Only Mode: Elevated permissions required to update stock</p>
+          </div>
+        )}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
-        {factoryProducts.map(p => {
+        {factoryProducts.length > 0 ? factoryProducts.map(p => {
           const s = stats[p.id] || { 
             global: {quantity:0, weight:0}, 
             factory: {quantity:0, weight:0}, 
@@ -112,11 +166,122 @@ const ProductMaster: React.FC<ProductMasterProps> = ({
 
               <div className="bg-slate-50 px-10 py-6 flex justify-between items-center border-t border-slate-100">
                 <p className="text-[9px] font-black text-slate-300 uppercase tracking-widest">Node ID: {p.id}</p>
+                {canManageInventory && (
+                  <button 
+                    onClick={() => {
+                      setSelectedProductId(p.id);
+                      setShowStockModal(true);
+                    }}
+                    className="bg-[#003366] text-white px-8 py-3 rounded-2xl font-black text-[11px] uppercase tracking-[0.1em] hover:bg-[#002855] transition-all flex items-center shadow-md hover:shadow-lg active:scale-95"
+                  >
+                    <i className="fa-solid fa-plus-circle mr-2 text-[#4DB848]"></i>
+                    Update Stock Level
+                  </button>
+                )}
               </div>
             </div>
           );
-        })}
+        }) : (
+          <div className="col-span-2 py-32 bg-slate-50 rounded-[4rem] border-2 border-dashed border-slate-200 flex flex-col items-center justify-center text-center">
+            <i className="fa-solid fa-box-open text-6xl text-slate-200 mb-8"></i>
+            <h3 className="text-2xl font-black text-[#003366] mb-4 uppercase">No Packing Bags Found</h3>
+            <p className="text-slate-400 font-medium uppercase text-xs tracking-widest">Register packing bags in the system to track factory inventory.</p>
+          </div>
+        )}
       </div>
+
+      {/* Stock Update Modal */}
+      {showStockModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300">
+          <div className="bg-white rounded-[3rem] shadow-2xl w-full max-w-xl overflow-hidden animate-in zoom-in-95 duration-300">
+            <div className="bg-[#003366] p-8 text-white flex justify-between items-center">
+              <div>
+                <h3 className="text-2xl font-black uppercase tracking-tighter">Update Factory Stock</h3>
+                <p className="text-[#4DB848] text-[10px] font-black uppercase tracking-widest mt-1">Manual Inventory Adjustment</p>
+              </div>
+              <button onClick={() => setShowStockModal(false)} className="w-10 h-10 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transition-all">
+                <i className="fa-solid fa-times"></i>
+              </button>
+            </div>
+            
+            <form onSubmit={handleStockSubmit} className="p-8 space-y-6">
+              <div className="grid grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest">Update Date</label>
+                  <input 
+                    type="date" 
+                    required 
+                    className="w-full px-6 py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:border-[#4DB848] outline-none font-black text-[#003366]"
+                    value={stockForm.date}
+                    onChange={e => setStockForm({...stockForm, date: e.target.value})}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest">Shift</label>
+                  <select 
+                    className="w-full px-6 py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:border-[#4DB848] outline-none font-black text-[#003366]"
+                    value={stockForm.shift}
+                    onChange={e => setStockForm({...stockForm, shift: e.target.value as Shift})}
+                  >
+                    {Object.values(Shift).map(s => <option key={s} value={s}>{s}</option>)}
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest">Quantity (Pcs)</label>
+                  <input 
+                    type="number" 
+                    required 
+                    min="1"
+                    className="w-full px-6 py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:border-[#4DB848] outline-none font-black text-2xl text-[#003366]"
+                    value={stockForm.quantity || ''}
+                    onChange={e => setStockForm({...stockForm, quantity: Number(e.target.value)})}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest">Weight (KG)</label>
+                  <input 
+                    type="number" 
+                    required 
+                    min="0" 
+                    step="0.01"
+                    className="w-full px-6 py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:border-[#4DB848] outline-none font-black text-2xl text-[#003366]"
+                    value={stockForm.weight || ''}
+                    onChange={e => setStockForm({...stockForm, weight: Number(e.target.value)})}
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest">Reference Number</label>
+                <input 
+                  type="text" 
+                  placeholder="e.g. BATCH-001"
+                  className="w-full px-6 py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:border-[#4DB848] outline-none font-black text-[#003366]"
+                  value={stockForm.referenceNumber}
+                  onChange={e => setStockForm({...stockForm, referenceNumber: e.target.value})}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest">Notes</label>
+                <textarea 
+                  placeholder="Additional details..."
+                  className="w-full px-6 py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:border-[#4DB848] outline-none font-medium text-[#003366] h-24 resize-none"
+                  value={stockForm.notes}
+                  onChange={e => setStockForm({...stockForm, notes: e.target.value})}
+                />
+              </div>
+
+              <button type="submit" className="w-full bg-[#003366] text-white py-6 rounded-3xl font-black text-xl hover:bg-[#002855] transition-all shadow-xl uppercase tracking-widest">
+                Confirm Stock Update
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
