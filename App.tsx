@@ -21,14 +21,13 @@ import { calculateInventory } from './utils';
 import { api, ApiError } from './services/api';
 import Dashboard from './components/Dashboard';
 import ProductMaster from './components/ProductMaster';
-import Receiving from './components/Receiving';
 import Dispatch from './components/Dispatch';
 import Ledger from './components/Ledger';
 import CustomerInsights from './components/CustomerInsights';
 import WarehouseSystem from './components/WarehouseSystem';
 import UserManagement from './components/UserManagement';
 
-type Tab = 'dashboard' | 'products' | 'receiving' | 'dispatch' | 'ledger' | 'customers' | 'warehouse' | 'users';
+type Tab = 'dashboard' | 'products'  | 'dispatch' | 'ledger' | 'customers' | 'warehouse' | 'users';
 
 const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<Tab>('dashboard');
@@ -458,16 +457,7 @@ const App: React.FC = () => {
             canDelete={hasPermission('delete_products')}
           />
         );
-      case 'receiving':
-        return (
-          <Receiving
-            products={products}
-            customers={customers}
-            onAddTransaction={addTransaction}
-            userRole={userRole}
-            canCreate={hasPermission('production_intake')}
-          />
-        );
+      
       case 'dispatch':
         return (
           <Dispatch
@@ -554,7 +544,6 @@ const App: React.FC = () => {
     { id: 'dashboard', label: 'Dashboard', icon: 'fa-chart-line', p: 'view_all' },
     { id: 'warehouse', label: 'Warehouse Control', icon: 'fa-industry', p: 'warehouse_control' },
     { id: 'products', label: 'Factory Inventory', icon: 'fa-box-open', p: 'view_all' },
-    { id: 'receiving', label: 'Production', icon: 'fa-industry', p: 'production_intake' },
     { id: 'dispatch', label: 'Dispatch', icon: 'fa-shipping-fast', p: 'dispatch_goods' },
     { id: 'ledger', label: 'Central Ledger', icon: 'fa-list-alt', p: 'view_all' },
     { id: 'customers', label: 'Partner Assets', icon: 'fa-users', p: 'view_all' },
